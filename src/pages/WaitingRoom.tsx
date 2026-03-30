@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CharacterAvatar from '@/components/CharacterAvatar';
 import { CHARACTERS, FUN_FACTS } from '@/utils/sounds';
+import { generateUsername } from '@/utils/playerIdentity';
 
 const WaitingRoom = () => {
   const navigate = useNavigate();
@@ -11,6 +12,8 @@ const WaitingRoom = () => {
   const character = CHARACTERS.find((c) => c.id === characterId) ?? CHARACTERS[0];
 
   const [factIndex, setFactIndex] = useState(0);
+  const [waitTime, setWaitTime] = useState(0);
+  const [showAIOption, setShowAIOption] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -19,18 +22,48 @@ const WaitingRoom = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Simulate match found after 3-5 seconds
+  // Track wait time
   useEffect(() => {
+    const interval = setInterval(() => {
+      setWaitTime((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Show AI option after 30 seconds
+  useEffect(() => {
+    if (waitTime >= 30 && !showAIOption) {
+      setShowAIOption(true);
+    }
+  }, [waitTime, showAIOption]);
+
+  // Simulate match found after 3-5 seconds (normal flow)
+  useEffect(() => {
+    if (showAIOption) return; // Don't auto-match if showing AI option
     const delay = 3000 + Math.random() * 2000;
     const timeout = setTimeout(() => {
       const partnerOptions = CHARACTERS.filter((c) => c.id !== characterId);
       const partner = partnerOptions[Math.floor(Math.random() * partnerOptions.length)];
+      const partnerName = generateUsername();
       navigate('/vibe', {
-        state: { characterId, partnerCharacterId: partner.id },
+        state: { characterId, partnerCharacterId: partner.id, partnerName },
       });
     }, delay);
     return () => clearTimeout(timeout);
-  }, [characterId, navigate]);
+  }, [characterId, navigate, showAIOption]);
+
+  const handlePlayWithAI = () => {
+    const partnerOptions = CHARACTERS.filter((c) => c.id !== characterId);
+    const partner = partnerOptions[Math.floor(Math.random() * partnerOptions.length)];
+    navigate('/vibe', {
+      state: {
+        characterId,
+        partnerCharacterId: partner.id,
+        partnerName: 'AI Bot',
+        isAI: true,
+      },
+    });
+  };
 
   return (
     <motion.div
@@ -56,6 +89,7 @@ const WaitingRoom = () => {
           >
             Finding your vibe partner...
           </motion.p>
+          <p className="mt-1 text-sm text-muted-foreground">{waitTime}s</p>
         </div>
 
         <div className="h-12">
@@ -72,6 +106,26 @@ const WaitingRoom = () => {
             </motion.p>
           </AnimatePresence>
         </div>
+
+        <AnimatePresence>
+          {showAIOption && (
+            <motion.div
+              className="flex flex-col items-center gap-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <p className="text-sm text-muted-foreground">No match found yet...</p>
+              <motion.button
+                onClick={handlePlayWithAI}
+                className="rounded-pill bg-primary px-6 py-3 font-semibold text-primary-foreground glow-border-purple"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                🤖 Play with AI instead
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <motion.button
           onClick={() => navigate('/')}

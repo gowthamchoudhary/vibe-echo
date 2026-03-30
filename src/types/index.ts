@@ -33,3 +33,17 @@ export interface SessionResult {
 }
 
 export type AppScreen = 'landing' | 'characterSelect' | 'waiting' | 'vibeRoom' | 'result';
+
+export interface FloatingScoreEvent {
+  id: number;
+  value: number;
+  label?: string;
+  x: number;
+  color: string;
+}
+
+export interface FeedbackEvent {
+  id: number;
+  text: string;
+  color: string;
+}
