@@ -47,3 +47,17 @@ export interface FeedbackEvent {
   text: string;
   color: string;
 }
+
+// WebSocket message types (mirrors worker/src/types.ts)
+export type ClientMessage =
+  | { type: 'JOIN'; characterId: string; username: string }
+  | { type: 'REACTION'; reactionId: string }
+  | { type: 'LEAVE' };
+
+export type ServerMessage =
+  | { type: 'WAITING'; position: number }
+  | { type: 'MATCH_FOUND'; sessionId: string; partnerCharacterId: string; partnerName: string }
+  | { type: 'REACTION'; reactionId: string; characterId: string }
+  | { type: 'SESSION_END'; finalScore: number; reactionCount: number }
+  | { type: 'COUNTER_UPDATE'; count: number }
+  | { type: 'ERROR'; message: string };
