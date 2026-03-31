@@ -1,15 +1,12 @@
 import { useCallback, useRef } from 'react';
 import { CHARACTERS, REACTIONS } from '@/utils/sounds';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const WORKER_URL = import.meta.env.VITE_WORKER_URL ?? '';
 
-// In-memory cache for audio blobs
+// In-memory cache for audio blob URLs
 const audioCache = new Map<string, string>();
 
 export function useAudio(muted: boolean) {
-  const playingRef = useRef(false);
-
   const playReactionSound = useCallback(async (characterId: string, reactionId: string) => {
     if (muted) return;
 
@@ -22,39 +19,24 @@ export function useAudio(muted: boolean) {
       return;
     }
 
-    const character = CHARACTERS.find(c => c.id === characterId);
-    const reaction = REACTIONS.find(r => r.id === reactionId);
-    if (!character || !reaction) return;
-
-    const text = `[${character.personality}] ${reaction.prompt}`;
+    // If no worker URL, skip audio
+    if (!WORKER_URL) return;
 
     try {
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/elevenlabs-tts`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            characterId,
-            reactionId,
-            voiceId: character.voiceId,
-            text,
-          }),
-        }
-      );
+      const response = await fetch(`${WORKER_URL}/sound`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId, reactionId }),
+      });
 
       if (!response.ok) {
-        console.warn('TTS request failed:', response.status);
+        console.warn('Sound request failed:', response.status);
         return;
       }
 
       const blob = await response.blob();
       const audioUrl = URL.createObjectURL(blob);
-      
+
       // Cache for future use
       audioCache.set(cacheKey, audioUrl);
 
