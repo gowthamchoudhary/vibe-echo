@@ -17,6 +17,7 @@ import { CHALLENGES, type ChallengeType } from '@/utils/challenges';
 import { getPlayerStats } from '@/utils/playerIdentity';
 import type { ReactionEvent, FloatingScoreEvent, FeedbackEvent } from '@/types';
 import { Volume2, VolumeX } from 'lucide-react';
+import { useAudio } from '@/hooks/useAudio';
 
 const SESSION_DURATION = 180;
 const CHALLENGE_DURATION = 20;
