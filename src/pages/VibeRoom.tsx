@@ -221,6 +221,9 @@ const VibeRoom = () => {
     ]);
     lastPartnerReactionRef.current = { reactionId, timestamp: Date.now() };
 
+    // Play partner's TTS sound
+    playReactionSound(partnerCharacterId, reactionId);
+
     const base = getRandomVibeIncrease();
     const intensity = getIntensityMultiplier(timeLeft, SESSION_DURATION);
     const score = Math.round(base * intensity * 0.5);
@@ -230,7 +233,7 @@ const VibeRoom = () => {
     setPartnerBounce(true);
     setPartnerRipple(reaction.color);
     setTimeout(() => { setPartnerBounce(false); setPartnerRipple(null); }, 600);
-  }, [partnerCharacterId, partnerChar.color, addFloatingScore, timeLeft]);
+  }, [partnerCharacterId, partnerChar.color, addFloatingScore, timeLeft, playReactionSound]);
 
   // Simulate partner (AI or placeholder)
   useEffect(() => {
