@@ -201,12 +201,15 @@ const VibeRoom = () => {
     setReactions((prev) => [...prev, { reactionId, characterId, from: 'self', timestamp: Date.now() }]);
     lastMyReactionRef.current = { reactionId, timestamp: Date.now() };
 
+    // Play TTS sound
+    playReactionSound(characterId, reactionId);
+
     setMyBounce(true);
     setMyRipple(reaction.color);
     setTimeout(() => { setMyBounce(false); setMyRipple(null); }, 600);
 
     evaluateChallenge(reactionId, 'self');
-  }, [characterId, evaluateChallenge]);
+  }, [characterId, evaluateChallenge, playReactionSound]);
 
   const handlePartnerReaction = useCallback((reactionId: string) => {
     const reaction = REACTIONS.find((r) => r.id === reactionId);
