@@ -17,6 +17,7 @@ import { CHALLENGES, type ChallengeType } from '@/utils/challenges';
 import { getPlayerStats } from '@/utils/playerIdentity';
 import type { ReactionEvent, FloatingScoreEvent, FeedbackEvent } from '@/types';
 import { Volume2, VolumeX } from 'lucide-react';
+import { useAudio } from '@/hooks/useAudio';
 
 const SESSION_DURATION = 180;
 const CHALLENGE_DURATION = 20;
@@ -38,6 +39,7 @@ const VibeRoom = () => {
   const [vibeScore, setVibeScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(SESSION_DURATION);
   const [muted, setMuted] = useState(false);
+  const { playReactionSound } = useAudio(muted);
   const [myBounce, setMyBounce] = useState(false);
   const [partnerBounce, setPartnerBounce] = useState(false);
   const [myRipple, setMyRipple] = useState<string | null>(null);
@@ -199,12 +201,15 @@ const VibeRoom = () => {
     setReactions((prev) => [...prev, { reactionId, characterId, from: 'self', timestamp: Date.now() }]);
     lastMyReactionRef.current = { reactionId, timestamp: Date.now() };
 
+    // Play TTS sound
+    playReactionSound(characterId, reactionId);
+
     setMyBounce(true);
     setMyRipple(reaction.color);
     setTimeout(() => { setMyBounce(false); setMyRipple(null); }, 600);
 
     evaluateChallenge(reactionId, 'self');
-  }, [characterId, evaluateChallenge]);
+  }, [characterId, evaluateChallenge, playReactionSound]);
 
   const handlePartnerReaction = useCallback((reactionId: string) => {
     const reaction = REACTIONS.find((r) => r.id === reactionId);
@@ -216,6 +221,9 @@ const VibeRoom = () => {
     ]);
     lastPartnerReactionRef.current = { reactionId, timestamp: Date.now() };
 
+    // Play partner's TTS sound
+    playReactionSound(partnerCharacterId, reactionId);
+
     const base = getRandomVibeIncrease();
     const intensity = getIntensityMultiplier(timeLeft, SESSION_DURATION);
     const score = Math.round(base * intensity * 0.5);
@@ -225,7 +233,7 @@ const VibeRoom = () => {
     setPartnerBounce(true);
     setPartnerRipple(reaction.color);
     setTimeout(() => { setPartnerBounce(false); setPartnerRipple(null); }, 600);
-  }, [partnerCharacterId, partnerChar.color, addFloatingScore, timeLeft]);
+  }, [partnerCharacterId, partnerChar.color, addFloatingScore, timeLeft, playReactionSound]);
 
   // Simulate partner (AI or placeholder)
   useEffect(() => {
