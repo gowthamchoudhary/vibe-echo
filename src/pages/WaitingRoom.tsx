@@ -1,19 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CharacterAvatar from '@/components/CharacterAvatar';
 import { CHARACTERS, FUN_FACTS } from '@/utils/sounds';
-import { generateUsername } from '@/utils/playerIdentity';
+import { generateUsername, getPlayerStats } from '@/utils/playerIdentity';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 const WaitingRoom = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const characterId = (location.state as { characterId?: string })?.characterId ?? 'robot';
   const character = CHARACTERS.find((c) => c.id === characterId) ?? CHARACTERS[0];
+  const playerStats = getPlayerStats();
 
   const [factIndex, setFactIndex] = useState(0);
   const [waitTime, setWaitTime] = useState(0);
   const [showAIOption, setShowAIOption] = useState(false);
+
+  const onMatchFound = useCallback((partnerCharacterId: string, partnerName: string, sessionId: string) => {
+    navigate('/vibe', {
+      state: {
+        characterId,
+        partnerCharacterId,
+        partnerName,
+        sessionId,
+        isReal: true,
+      },
+    });
+  }, [characterId, navigate]);
+
+  const onPartnerReaction = useCallback(() => {}, []);
+  const onSessionEnd = useCallback(() => {}, []);
+
+  const { status, connect, disconnect, isOnline } = useWebSocket({
+    characterId,
+    username: playerStats.username,
+    onMatchFound,
+    onPartnerReaction,
+    onSessionEnd,
+  });
+
+  // Connect to WebSocket on mount
+  useEffect(() => {
+    if (isOnline) {
+      connect();
+    }
+    return () => disconnect();
+  }, [isOnline, connect, disconnect]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -30,29 +63,16 @@ const WaitingRoom = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Show AI option after 30 seconds
+  // Show AI option after 15 seconds (or immediately if offline)
   useEffect(() => {
-    if (waitTime >= 30 && !showAIOption) {
+    const threshold = isOnline ? 15 : 3;
+    if (waitTime >= threshold && !showAIOption) {
       setShowAIOption(true);
     }
-  }, [waitTime, showAIOption]);
-
-  // Simulate match found after 3-5 seconds (normal flow)
-  useEffect(() => {
-    if (showAIOption) return; // Don't auto-match if showing AI option
-    const delay = 3000 + Math.random() * 2000;
-    const timeout = setTimeout(() => {
-      const partnerOptions = CHARACTERS.filter((c) => c.id !== characterId);
-      const partner = partnerOptions[Math.floor(Math.random() * partnerOptions.length)];
-      const partnerName = generateUsername();
-      navigate('/vibe', {
-        state: { characterId, partnerCharacterId: partner.id, partnerName },
-      });
-    }, delay);
-    return () => clearTimeout(timeout);
-  }, [characterId, navigate, showAIOption]);
+  }, [waitTime, showAIOption, isOnline]);
 
   const handlePlayWithAI = () => {
+    disconnect();
     const partnerOptions = CHARACTERS.filter((c) => c.id !== characterId);
     const partner = partnerOptions[Math.floor(Math.random() * partnerOptions.length)];
     navigate('/vibe', {
@@ -64,6 +84,14 @@ const WaitingRoom = () => {
       },
     });
   };
+
+  const statusText = !isOnline
+    ? 'Searching locally...'
+    : status === 'connecting'
+      ? 'Connecting to server...'
+      : status === 'waiting'
+        ? 'Finding your vibe partner...'
+        : 'Finding your vibe partner...';
 
   return (
     <motion.div
@@ -87,9 +115,15 @@ const WaitingRoom = () => {
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ duration: 1.5, repeat: Infinity }}
           >
-            Finding your vibe partner...
+            {statusText}
           </motion.p>
           <p className="mt-1 text-sm text-muted-foreground">{waitTime}s</p>
+          {isOnline && (
+            <p className="mt-1 text-xs text-accent">🟢 Connected to live server</p>
+          )}
+          {!isOnline && (
+            <p className="mt-1 text-xs text-muted-foreground">⚪ Offline mode</p>
+          )}
         </div>
 
         <div className="h-12">
@@ -114,7 +148,9 @@ const WaitingRoom = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <p className="text-sm text-muted-foreground">No match found yet...</p>
+              <p className="text-sm text-muted-foreground">
+                {isOnline ? 'No match found yet...' : 'Worker not deployed — try AI!'}
+              </p>
               <motion.button
                 onClick={handlePlayWithAI}
                 className="rounded-pill bg-primary px-6 py-3 font-semibold text-primary-foreground glow-border-purple"
@@ -128,7 +164,7 @@ const WaitingRoom = () => {
         </AnimatePresence>
 
         <motion.button
-          onClick={() => navigate('/')}
+          onClick={() => { disconnect(); navigate('/'); }}
           className="mt-4 rounded-pill border border-border px-6 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
