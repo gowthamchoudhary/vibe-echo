@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import type { ServerMessage, ClientMessage } from '@/types';
 
 // Set this to your deployed Cloudflare Worker URL
-const WORKER_URL = import.meta.env.VITE_WORKER_URL ?? '';
+const WORKER_URL = import.meta.env.VITE_WORKER_URL ?? 'https://jayavarapugowtham.workers.dev';
 const WS_URL = WORKER_URL ? WORKER_URL.replace(/^http/, 'ws') + '/ws' : '';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'waiting' | 'matched';

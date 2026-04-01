@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { CHARACTERS, REACTIONS } from '@/utils/sounds';
 
-const WORKER_URL = import.meta.env.VITE_WORKER_URL ?? '';
+const WORKER_URL = import.meta.env.VITE_WORKER_URL ?? 'https://jayavarapugowtham.workers.dev';
 
 // In-memory cache for audio blob URLs
 const audioCache = new Map<string, string>();
