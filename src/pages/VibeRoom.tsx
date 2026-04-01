@@ -13,11 +13,12 @@ import SyncPulse from '@/components/SyncPulse';
 import ParticleBurst from '@/components/ParticleBurst';
 import { CHARACTERS, REACTIONS } from '@/utils/sounds';
 import { getRandomVibeIncrease, getComboMultiplier, getScoreWithCombo, getIntensityMultiplier } from '@/utils/vibeScore';
-import { CHALLENGES, type ChallengeType } from '@/utils/challenges';
+import { CHALLENGES } from '@/utils/challenges';
 import { getPlayerStats } from '@/utils/playerIdentity';
 import type { ReactionEvent, FloatingScoreEvent, FeedbackEvent } from '@/types';
 import { Volume2, VolumeX } from 'lucide-react';
 import { useAudio } from '@/hooks/useAudio';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 const SESSION_DURATION = 180;
 const CHALLENGE_DURATION = 20;
@@ -25,11 +26,20 @@ const CHALLENGE_DURATION = 20;
 const VibeRoom = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { characterId, partnerCharacterId, partnerName, isAI } = (location.state as {
+  const {
+    characterId,
+    partnerCharacterId,
+    partnerName,
+    isAI,
+    isReal,
+    sessionId,
+  } = (location.state as {
     characterId: string;
     partnerCharacterId: string;
     partnerName?: string;
     isAI?: boolean;
+    isReal?: boolean;
+    sessionId?: string;
   }) ?? { characterId: 'robot', partnerCharacterId: 'witch' };
 
   const myChar = CHARACTERS.find((c) => c.id === characterId) ?? CHARACTERS[0];
@@ -67,6 +77,65 @@ const VibeRoom = () => {
   const lastPartnerReactionRef = useRef<{ reactionId: string; timestamp: number } | null>(null);
   const lastMyReactionRef = useRef<{ reactionId: string; timestamp: number } | null>(null);
 
+  // Handle partner reaction (shared between real & simulated)
+  const handlePartnerReaction = useCallback((reactionId: string) => {
+    const reaction = REACTIONS.find((r) => r.id === reactionId);
+    if (!reaction) return;
+
+    setReactions((prev) => [
+      ...prev,
+      { reactionId, characterId: partnerCharacterId, from: 'partner', timestamp: Date.now() },
+    ]);
+    lastPartnerReactionRef.current = { reactionId, timestamp: Date.now() };
+
+    playReactionSound(partnerCharacterId, reactionId);
+
+    const base = getRandomVibeIncrease();
+    const intensity = getIntensityMultiplier(timeLeft, SESSION_DURATION);
+    const score = Math.round(base * intensity * 0.5);
+    setVibeScore((v) => Math.min(100, v + score));
+
+    const id = ++floatIdRef.current;
+    setFloatingScores((prev) => [...prev.slice(-5), { id, value: score, label: undefined, x: 70, color: partnerChar.color }]);
+    setTimeout(() => setFloatingScores((prev) => prev.filter((f) => f.id !== id)), 1200);
+
+    setPartnerBounce(true);
+    setPartnerRipple(reaction.color);
+    setTimeout(() => { setPartnerBounce(false); setPartnerRipple(null); }, 600);
+  }, [partnerCharacterId, partnerChar.color, timeLeft, playReactionSound]);
+
+  // Real-time WebSocket for real matches
+  const onPartnerReactionWs = useCallback((reactionId: string, _characterId: string) => {
+    handlePartnerReaction(reactionId);
+  }, [handlePartnerReaction]);
+
+  const onSessionEndWs = useCallback((finalScore: number, reactionCount: number) => {
+    const sentReactions = reactions.filter((r) => r.from === 'self');
+    const mostUsed = getMostUsedReaction(sentReactions);
+    navigate('/result', {
+      state: {
+        vibeScore: finalScore,
+        reactionsSent: sentReactions.length,
+        reactionsReceived: reactionCount - sentReactions.length,
+        mostUsedReaction: mostUsed,
+        myCharacterId: characterId,
+        partnerCharacterId,
+        partnerName: partnerName ?? 'Stranger',
+        maxCombo: combo,
+      },
+    });
+  }, [reactions, characterId, partnerCharacterId, partnerName, combo, navigate]);
+
+  const onMatchFound = useCallback(() => {}, []);
+
+  const { sendReaction, disconnect } = useWebSocket({
+    characterId,
+    username: playerStats.username,
+    onMatchFound,
+    onPartnerReaction: onPartnerReactionWs,
+    onSessionEnd: onSessionEndWs,
+  });
+
   // Timer
   useEffect(() => {
     const interval = setInterval(() => {
@@ -92,14 +161,12 @@ const VibeRoom = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // End session
+  // End session (client-side timer for AI mode; real mode gets SESSION_END from server)
   useEffect(() => {
-    if (timeLeft === 0) {
+    if (timeLeft === 0 && !isReal) {
       const sentReactions = reactions.filter((r) => r.from === 'self');
       const receivedReactions = reactions.filter((r) => r.from === 'partner');
-      const reactionCounts: Record<string, number> = {};
-      sentReactions.forEach((r) => { reactionCounts[r.reactionId] = (reactionCounts[r.reactionId] ?? 0) + 1; });
-      const mostUsed = Object.entries(reactionCounts).sort(([, a], [, b]) => b - a)[0]?.[0] ?? 'hype';
+      const mostUsed = getMostUsedReaction(sentReactions);
 
       navigate('/result', {
         state: {
@@ -114,7 +181,32 @@ const VibeRoom = () => {
         },
       });
     }
-  }, [timeLeft, vibeScore, reactions, characterId, partnerCharacterId, navigate, combo, partnerName]);
+    // For real mode, also end client-side if server hasn't sent SESSION_END
+    if (timeLeft === 0 && isReal) {
+      setTimeout(() => {
+        // Give server 3 seconds to send SESSION_END, then force-end
+        const sentReactions = reactions.filter((r) => r.from === 'self');
+        const mostUsed = getMostUsedReaction(sentReactions);
+        navigate('/result', {
+          state: {
+            vibeScore: Math.min(100, vibeScore),
+            reactionsSent: sentReactions.length,
+            reactionsReceived: reactions.filter((r) => r.from === 'partner').length,
+            mostUsedReaction: mostUsed,
+            myCharacterId: characterId,
+            partnerCharacterId,
+            partnerName: partnerName ?? 'Stranger',
+            maxCombo: combo,
+          },
+        });
+      }, 3000);
+    }
+  }, [timeLeft, vibeScore, reactions, characterId, partnerCharacterId, navigate, combo, partnerName, isReal]);
+
+  // Cleanup WebSocket on unmount
+  useEffect(() => {
+    return () => disconnect();
+  }, [disconnect]);
 
   const addFloatingScore = useCallback((value: number, label: string | undefined, x: number, color: string) => {
     const id = ++floatIdRef.current;
@@ -140,7 +232,7 @@ const VibeRoom = () => {
   }, []);
 
   // Evaluate challenge result
-  const evaluateChallenge = useCallback((myReactionId: string, from: 'self') => {
+  const evaluateChallenge = useCallback((myReactionId: string) => {
     const challengeType = currentChallenge.type;
     const now = Date.now();
     const intensity = getIntensityMultiplier(timeLeft, SESSION_DURATION);
@@ -186,7 +278,7 @@ const VibeRoom = () => {
       }
     }
 
-    // Default: free react or no challenge match
+    // Default: free react
     const base = getRandomVibeIncrease();
     const score = getScoreWithCombo(Math.round(base * intensity), combo);
     setVibeScore((v) => Math.min(100, v + score));
@@ -201,42 +293,24 @@ const VibeRoom = () => {
     setReactions((prev) => [...prev, { reactionId, characterId, from: 'self', timestamp: Date.now() }]);
     lastMyReactionRef.current = { reactionId, timestamp: Date.now() };
 
-    // Play TTS sound
     playReactionSound(characterId, reactionId);
+
+    // Send via WebSocket to real partner
+    if (isReal) {
+      sendReaction(reactionId);
+    }
 
     setMyBounce(true);
     setMyRipple(reaction.color);
     setTimeout(() => { setMyBounce(false); setMyRipple(null); }, 600);
 
-    evaluateChallenge(reactionId, 'self');
-  }, [characterId, evaluateChallenge, playReactionSound]);
+    evaluateChallenge(reactionId);
+  }, [characterId, evaluateChallenge, playReactionSound, isReal, sendReaction]);
 
-  const handlePartnerReaction = useCallback((reactionId: string) => {
-    const reaction = REACTIONS.find((r) => r.id === reactionId);
-    if (!reaction) return;
-
-    setReactions((prev) => [
-      ...prev,
-      { reactionId, characterId: partnerCharacterId, from: 'partner', timestamp: Date.now() },
-    ]);
-    lastPartnerReactionRef.current = { reactionId, timestamp: Date.now() };
-
-    // Play partner's TTS sound
-    playReactionSound(partnerCharacterId, reactionId);
-
-    const base = getRandomVibeIncrease();
-    const intensity = getIntensityMultiplier(timeLeft, SESSION_DURATION);
-    const score = Math.round(base * intensity * 0.5);
-    setVibeScore((v) => Math.min(100, v + score));
-    addFloatingScore(score, undefined, 70, partnerChar.color);
-
-    setPartnerBounce(true);
-    setPartnerRipple(reaction.color);
-    setTimeout(() => { setPartnerBounce(false); setPartnerRipple(null); }, 600);
-  }, [partnerCharacterId, partnerChar.color, addFloatingScore, timeLeft, playReactionSound]);
-
-  // Simulate partner (AI or placeholder)
+  // Simulate partner only for AI/offline mode
   useEffect(() => {
+    if (isReal) return; // Don't simulate for real matches
+
     const simulatePartner = () => {
       const baseDelay = isAI ? 300 + Math.random() * 900 : 2000 + Math.random() * 4000;
       const intensity = getIntensityMultiplier(timeLeft, SESSION_DURATION);
@@ -246,7 +320,6 @@ const VibeRoom = () => {
         if (timeLeft > 0) {
           const challenge = CHALLENGES[challengeIndex];
 
-          // AI sometimes syncs on match_vibe challenge
           if (challenge.type === 'match_vibe' && lastMyReactionRef.current && Math.random() > 0.4) {
             handlePartnerReaction(lastMyReactionRef.current.reactionId);
           } else {
@@ -260,7 +333,7 @@ const VibeRoom = () => {
     };
     const t = simulatePartner();
     return () => clearTimeout(t);
-  }, [timeLeft, isAI, challengeIndex, handlePartnerReaction]);
+  }, [timeLeft, isAI, isReal, challengeIndex, handlePartnerReaction]);
 
   // Sync pulse handler
   const handleSyncTap = useCallback((accuracy: 'perfect' | 'good' | 'miss') => {
@@ -338,6 +411,18 @@ const VibeRoom = () => {
           {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </button>
       </div>
+
+      {/* Connection indicator */}
+      {isReal && (
+        <div className="mb-1 flex justify-center">
+          <span className="text-xs text-accent">🟢 Live session</span>
+        </div>
+      )}
+      {!isReal && (
+        <div className="mb-1 flex justify-center">
+          <span className="text-xs text-muted-foreground">{isAI ? '🤖 AI Partner' : '⚪ Simulated'}</span>
+        </div>
+      )}
 
       {/* Combo counter */}
       <div className="mb-2 flex justify-center">
@@ -421,5 +506,11 @@ const VibeRoom = () => {
     </motion.div>
   );
 };
+
+function getMostUsedReaction(sentReactions: ReactionEvent[]): string {
+  const counts: Record<string, number> = {};
+  sentReactions.forEach((r) => { counts[r.reactionId] = (counts[r.reactionId] ?? 0) + 1; });
+  return Object.entries(counts).sort(([, a], [, b]) => b - a)[0]?.[0] ?? 'hype';
+}
 
 export default VibeRoom;
