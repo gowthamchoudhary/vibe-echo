@@ -49,7 +49,8 @@ const VibeRoom = () => {
   const [vibeScore, setVibeScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(SESSION_DURATION);
   const [muted, setMuted] = useState(false);
-  const { playReactionSound } = useAudio(muted);
+  const preloadIds = [characterId, partnerCharacterId];
+  const { playReactionSound } = useAudio(muted, preloadIds);
   const [myBounce, setMyBounce] = useState(false);
   const [partnerBounce, setPartnerBounce] = useState(false);
   const [myRipple, setMyRipple] = useState<string | null>(null);
