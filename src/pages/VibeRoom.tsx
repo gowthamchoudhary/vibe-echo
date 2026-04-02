@@ -22,6 +22,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 
 const SESSION_DURATION = 180;
 const CHALLENGE_DURATION = 20;
+const REACTION_COOLDOWN_MS = 1200;
 
 const VibeRoom = () => {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ const VibeRoom = () => {
   const [timeLeft, setTimeLeft] = useState(SESSION_DURATION);
   const [muted, setMuted] = useState(false);
   const preloadIds = [characterId, partnerCharacterId];
-  const { playReactionSound } = useAudio(muted, preloadIds);
+  const { playReactionSound, stopCurrentAudio } = useAudio(muted, preloadIds);
   const [myBounce, setMyBounce] = useState(false);
   const [partnerBounce, setPartnerBounce] = useState(false);
   const [myRipple, setMyRipple] = useState<string | null>(null);
@@ -60,11 +61,27 @@ const VibeRoom = () => {
   const [floatingScores, setFloatingScores] = useState<FloatingScoreEvent[]>([]);
   const [feedbacks, setFeedbacks] = useState<FeedbackEvent[]>([]);
   const [particleBurst, setParticleBurst] = useState<{ active: boolean; color: string; id: number }>({ active: false, color: '#6366F1', id: 0 });
+  const [myTurn, setMyTurn] = useState(true);
+  const [canReact, setCanReact] = useState(true);
   const floatIdRef = useRef(0);
+  const aiResponseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cooldownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentChallenge = CHALLENGES[challengeIndex];
   const lastPartnerReactionRef = useRef<{ reactionId: string; timestamp: number } | null>(null);
   const lastMyReactionRef = useRef<{ reactionId: string; timestamp: number } | null>(null);
+
+  const lockReactions = useCallback(() => {
+    setCanReact(false);
+    if (cooldownTimeoutRef.current) clearTimeout(cooldownTimeoutRef.current);
+    cooldownTimeoutRef.current = setTimeout(() => {
+      setCanReact(true);
+    }, REACTION_COOLDOWN_MS);
+  }, []);
+
+  const unlockReactionTurn = useCallback(() => {
+    setMyTurn(true);
+  }, []);
 
   const handlePartnerReaction = useCallback((reactionId: string) => {
     const reaction = REACTIONS.find((r) => r.id === reactionId);
@@ -93,7 +110,9 @@ const VibeRoom = () => {
       setPartnerBounce(false);
       setPartnerRipple(null);
     }, 400);
-  }, [partnerCharacterId, timeLeft, playReactionSound]);
+
+    unlockReactionTurn();
+  }, [partnerCharacterId, timeLeft, playReactionSound, unlockReactionTurn]);
 
   const onPartnerReactionWs = useCallback((reactionId: string) => {
     handlePartnerReaction(reactionId);
@@ -193,8 +212,13 @@ const VibeRoom = () => {
   }, [timeLeft, vibeScore, reactions, characterId, partnerCharacterId, navigate, combo, partnerName, isReal]);
 
   useEffect(() => {
-    return () => disconnect();
-  }, [disconnect]);
+    return () => {
+      if (aiResponseTimeoutRef.current) clearTimeout(aiResponseTimeoutRef.current);
+      if (cooldownTimeoutRef.current) clearTimeout(cooldownTimeoutRef.current);
+      stopCurrentAudio();
+      disconnect();
+    };
+  }, [disconnect, stopCurrentAudio]);
 
   const addFloatingScore = useCallback((value: number, label: string | undefined, x: number, color: string) => {
     const id = ++floatIdRef.current;
@@ -267,8 +291,13 @@ const VibeRoom = () => {
   }, [currentChallenge, combo, timeLeft, addFloatingScore, addFeedback, triggerParticle]);
 
   const handleReact = useCallback((reactionId: string) => {
+    if (!myTurn || !canReact) return;
+
     const reaction = REACTIONS.find((r) => r.id === reactionId);
     if (!reaction) return;
+
+    lockReactions();
+    setMyTurn(false);
 
     setReactions((prev) => [...prev, { reactionId, characterId, from: 'self', timestamp: Date.now() }]);
     lastMyReactionRef.current = { reactionId, timestamp: Date.now() };
@@ -277,6 +306,20 @@ const VibeRoom = () => {
 
     if (isReal) {
       sendReaction(reactionId);
+    } else {
+      if (aiResponseTimeoutRef.current) clearTimeout(aiResponseTimeoutRef.current);
+      aiResponseTimeoutRef.current = setTimeout(() => {
+        if (timeLeft <= 0) return;
+
+        const challenge = CHALLENGES[challengeIndex];
+        if (challenge.type === 'match_vibe' && Math.random() > 0.4) {
+          handlePartnerReaction(reactionId);
+          return;
+        }
+
+        const randomReaction = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
+        handlePartnerReaction(randomReaction.id);
+      }, 500 + Math.random() * 800);
     }
 
     setMyBounce(true);
@@ -287,35 +330,7 @@ const VibeRoom = () => {
     }, 400);
 
     evaluateChallenge(reactionId);
-  }, [characterId, evaluateChallenge, playReactionSound, isReal, sendReaction]);
-
-  useEffect(() => {
-    if (isReal) return;
-
-    const simulatePartner = () => {
-      const baseDelay = isAI ? 300 + Math.random() * 900 : 2000 + Math.random() * 4000;
-      const intensity = getIntensityMultiplier(timeLeft, SESSION_DURATION);
-      const delay = baseDelay / intensity;
-
-      const timeout = setTimeout(() => {
-        if (timeLeft > 0) {
-          const challenge = CHALLENGES[challengeIndex];
-
-          if (challenge.type === 'match_vibe' && lastMyReactionRef.current && Math.random() > 0.4) {
-            handlePartnerReaction(lastMyReactionRef.current.reactionId);
-          } else {
-            const randomReaction = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
-            handlePartnerReaction(randomReaction.id);
-          }
-          simulatePartner();
-        }
-      }, delay);
-      return timeout;
-    };
-
-    const t = simulatePartner();
-    return () => clearTimeout(t);
-  }, [timeLeft, isAI, isReal, challengeIndex, handlePartnerReaction]);
+  }, [myTurn, canReact, lockReactions, characterId, isReal, sendReaction, timeLeft, challengeIndex, playReactionSound, handlePartnerReaction, evaluateChallenge]);
 
   const handleSyncTap = useCallback((accuracy: 'perfect' | 'good' | 'miss') => {
     const intensity = getIntensityMultiplier(timeLeft, SESSION_DURATION);
@@ -345,6 +360,7 @@ const VibeRoom = () => {
   const timerDanger = timeLeft <= 30;
   const timerCritical = timeLeft <= 10;
   const multiplier = getComboMultiplier(combo);
+  const reactionsDisabled = !myTurn || !canReact;
 
   return (
     <motion.div
@@ -380,6 +396,12 @@ const VibeRoom = () => {
         <div className="flex justify-center">
           <span className="status-chip">
             {isReal ? 'Live session' : isAI ? 'AI partner' : 'Simulated partner'}
+          </span>
+        </div>
+
+        <div className="flex justify-center">
+          <span className="status-chip">
+            {myTurn ? 'Your turn' : 'Waiting for partner'}
           </span>
         </div>
 
@@ -429,7 +451,12 @@ const VibeRoom = () => {
 
           <div className="grid grid-cols-3 gap-3">
             {REACTIONS.map((reaction) => (
-              <ReactionButton key={reaction.id} reaction={reaction} onReact={handleReact} />
+              <ReactionButton
+                key={reaction.id}
+                reaction={reaction}
+                onReact={handleReact}
+                disabled={reactionsDisabled}
+              />
             ))}
           </div>
         </div>
