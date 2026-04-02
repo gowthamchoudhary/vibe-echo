@@ -15,7 +15,7 @@ binding = "VIBECALL_KV"
 id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
 
 [vars]
-FRONTEND_URL = "https://your-frontend.lovable.app"
+FRONTEND_URL = "https://id-preview--a7839e14-bd90-4827-aec0-12e418fd0f4f.lovable.app"
 
 # Add your ElevenLabs API key as a secret:
 # wrangler secret put ELEVENLABS_API_KEY
