@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'sans-serif'],
+        sans: ["Inter", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -50,30 +50,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        neon: {
-          purple: "#9b59ff",
-          cyan: "#00f5ff",
-        },
-        char: {
-          robot: "#00f5ff",
-          knight: "#ffd700",
-          villain: "#ff4444",
-          witch: "#9b59ff",
-        },
-        react: {
-          hype: "#ff6b00",
-          confused: "#00f5ff",
-          sad: "#4488ff",
-          angry: "#ff2244",
-          laugh: "#ffdd00",
-          mysterious: "#9b59ff",
-        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-        pill: "99px",
+        pill: "12px",
       },
       keyframes: {
         "accordion-down": {
@@ -84,20 +66,10 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "pulse-ring": {
-          "0%": { transform: "scale(1)", opacity: "0.6" },
-          "100%": { transform: "scale(1.4)", opacity: "0" },
-        },
-        "ripple-expand": {
-          "0%": { transform: "scale(0)", opacity: "0.6" },
-          "100%": { transform: "scale(3)", opacity: "0" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-ring": "pulse-ring 1.5s ease-out infinite",
-        "ripple-expand": "ripple-expand 0.8s ease-out forwards",
       },
     },
   },

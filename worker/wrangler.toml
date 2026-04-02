@@ -8,12 +8,11 @@ class_name = "VibeSession"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["VibeSession"]
+new_sqlite_classes = ["VibeSession"]
 
 [[kv_namespaces]]
-binding = "VIBECALL_KV"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
-
+binding = "CACHE"
+id = "72447da76c77422aacc43a1baebd6a50"
 [vars]
 FRONTEND_URL = "https://id-preview--a7839e14-bd90-4827-aec0-12e418fd0f4f.lovable.app"
 

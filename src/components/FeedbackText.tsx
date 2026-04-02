@@ -17,12 +17,11 @@ const FeedbackText = ({ events }: FeedbackTextProps) => {
         {events.slice(-1).map((e) => (
           <motion.div
             key={e.id}
-            className="text-2xl font-bold"
-            style={{ color: e.color, textShadow: `0 0 20px ${e.color}88` }}
-            initial={{ opacity: 0, scale: 0.5 }}
+            className="rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground"
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.5 }}
-            transition={{ duration: 0.4 }}
+            exit={{ opacity: 0, scale: 1.04 }}
+            transition={{ duration: 0.2 }}
           >
             {e.text}
           </motion.div>

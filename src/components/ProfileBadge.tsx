@@ -8,17 +8,17 @@ interface ProfileBadgeProps {
 const ProfileBadge = ({ stats }: ProfileBadgeProps) => {
   return (
     <motion.div
-      className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3"
-      initial={{ opacity: 0, x: -20 }}
+      className="panel flex items-center gap-3"
+      initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.5 }}
+      transition={{ delay: 0.2, duration: 0.2 }}
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-sm font-semibold text-primary">
         {stats.username.charAt(0)}
       </div>
       <div className="flex-1">
         <p className="text-sm font-semibold text-foreground">{stats.username}</p>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
           <span>{stats.totalVibes} vibes</span>
           <span>·</span>
           <span>Best: {stats.highestScore}%</span>

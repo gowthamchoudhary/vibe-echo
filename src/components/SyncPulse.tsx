@@ -21,7 +21,6 @@ const SyncPulse = ({ active, onTap }: SyncPulseProps) => {
 
   const handleTap = useCallback(() => {
     if (!active) return;
-    // Check if tap is near the pulse peak (phase 0)
     const normalized = pulsePhase % 10;
     if (normalized <= 1 || normalized >= 9) {
       onTap('perfect');
@@ -38,20 +37,19 @@ const SyncPulse = ({ active, onTap }: SyncPulseProps) => {
     <motion.button
       onClick={handleTap}
       className="relative mx-auto flex h-24 w-24 items-center justify-center"
-      whileTap={{ scale: 0.9 }}
+      whileTap={{ scale: 0.98 }}
     >
       <motion.div
-        className="absolute h-24 w-24 rounded-full border-2 border-primary"
-        animate={{ scale: [1, 1.4, 1], opacity: [0.8, 0.2, 0.8] }}
+        className="absolute h-24 w-24 rounded-full border border-primary/60"
+        animate={{ scale: [1, 1.12, 1], opacity: [0.7, 0.25, 0.7] }}
         transition={{ duration: INTERVAL / 1000, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
         className="h-12 w-12 rounded-full bg-primary"
-        style={{ boxShadow: '0 0 20px hsl(268 100% 67% / 0.5)' }}
-        animate={{ scale: [0.8, 1.1, 0.8] }}
+        animate={{ scale: [0.92, 1, 0.92] }}
         transition={{ duration: INTERVAL / 1000, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <span className="absolute -bottom-6 text-xs text-muted-foreground">Tap!</span>
+      <span className="absolute -bottom-6 text-[13px] text-muted-foreground">Tap</span>
     </motion.button>
   );
 };

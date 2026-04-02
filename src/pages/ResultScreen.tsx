@@ -6,7 +6,7 @@ import ProfileBadge from '@/components/ProfileBadge';
 import { CHARACTERS, REACTIONS } from '@/utils/sounds';
 import { getVibeLabel } from '@/utils/vibeScore';
 import { getVibeTitle } from '@/utils/rewards';
-import { getPlayerStats, updatePlayerStats, determinePlayStyle, addToVibeList, generateUsername } from '@/utils/playerIdentity';
+import { getPlayerStats, updatePlayerStats, determinePlayStyle, addToVibeList } from '@/utils/playerIdentity';
 
 const ResultScreen = () => {
   const navigate = useNavigate();
@@ -37,7 +37,6 @@ const ResultScreen = () => {
   const [showConnectionMoment, setShowConnectionMoment] = useState(false);
   const [addedToVibeList, setAddedToVibeList] = useState(false);
 
-  // Update stats on mount
   useEffect(() => {
     const stats = getPlayerStats();
     const updated = updatePlayerStats({
@@ -48,12 +47,10 @@ const ResultScreen = () => {
     });
     setPlayerStats(updated);
 
-    // Title reveal delay
-    setTimeout(() => setTitleRevealed(true), 1200);
+    setTimeout(() => setTitleRevealed(true), 400);
 
-    // Connection moment for high scores
     if (vibeScore > 75) {
-      setTimeout(() => setShowConnectionMoment(true), 2000);
+      setTimeout(() => setShowConnectionMoment(true), 700);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -69,120 +66,110 @@ const ResultScreen = () => {
 
   const container = {
     hidden: {},
-    show: { transition: { staggerChildren: 0.1 } },
+    show: { transition: { staggerChildren: 0.08 } },
   };
 
   const item = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 8 },
     show: { opacity: 1, y: 0 },
   };
 
   return (
     <motion.div
-      className="flex min-h-screen flex-col items-center justify-center px-6 py-12"
+      className="flex min-h-screen flex-col items-center justify-center"
       variants={container}
       initial="hidden"
       animate="show"
     >
-      <div className="flex w-full max-w-md flex-col items-center gap-6">
+      <div className="app-shell flex flex-col items-center gap-5">
         <motion.h1
-          className="text-4xl font-bold text-foreground text-glow-purple"
+          className="text-[28px] font-semibold text-foreground"
           variants={item}
         >
-          VIBE UNLOCKED
+          Session complete
         </motion.h1>
 
-        <motion.div className="flex items-center gap-6" variants={item}>
+        <motion.div className="panel flex w-full items-center justify-between gap-4" variants={item}>
           <div className="flex flex-col items-center">
-            <span className="mb-1 text-xs text-muted-foreground">{playerStats.username}</span>
+            <span className="mb-2 text-[13px] text-muted-foreground">{playerStats.username}</span>
             <CharacterAvatar emoji={myChar.emoji} color={myChar.color} glow={myChar.glow} size={80} />
           </div>
-          <span className="text-2xl text-muted-foreground">⚡</span>
+          <span className="text-sm text-muted-foreground">matched</span>
           <div className="flex flex-col items-center">
-            <span className="mb-1 text-xs text-muted-foreground">{partnerName}</span>
+            <span className="mb-2 text-[13px] text-muted-foreground">{partnerName}</span>
             <CharacterAvatar emoji={partnerChar.emoji} color={partnerChar.color} glow={partnerChar.glow} size={80} />
           </div>
         </motion.div>
 
-        <motion.div className="text-center" variants={item}>
+        <motion.div className="panel w-full text-center" variants={item}>
           <motion.p
-            className="text-7xl font-bold text-foreground"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.3 }}
+            className="text-[28px] font-semibold text-foreground"
+            initial={{ scale: 0.98, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.1 }}
           >
             {vibeScore}%
           </motion.p>
-          <p className="mt-2 text-lg font-medium text-primary">{getVibeLabel(vibeScore)}</p>
+          <p className="mt-2 text-base font-medium text-primary">{getVibeLabel(vibeScore)}</p>
         </motion.div>
 
-        {/* Title reveal */}
-        <motion.div variants={item} className="text-center">
+        <motion.div variants={item} className="panel w-full text-center">
           <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={titleRevealed ? { opacity: 1, scale: 1 } : {}}
-            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+            transition={{ duration: 0.2 }}
           >
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Title earned</p>
-            <p
-              className="mt-1 text-2xl font-bold"
-              style={{ color: vibeTitle.color, textShadow: `0 0 20px ${vibeTitle.color}66` }}
-            >
+            <p className="text-[13px] uppercase tracking-[0.12em] text-muted-foreground">Title earned</p>
+            <p className="mt-2 text-[22px] font-semibold text-foreground">
               {vibeTitle.title}
             </p>
-            <p className="text-sm text-muted-foreground">{vibeTitle.description}</p>
+            <p className="text-[13px] text-muted-foreground">{vibeTitle.description}</p>
           </motion.div>
         </motion.div>
 
-        <motion.div
-          className="w-full rounded-lg bg-card p-4"
-          style={{ border: '1px solid hsl(var(--border))' }}
-          variants={item}
-        >
+        <motion.div className="panel w-full" variants={item}>
           <div className="grid grid-cols-4 gap-3 text-center">
             <div>
-              <p className="text-2xl font-bold text-foreground">{reactionsSent}</p>
-              <p className="text-xs text-muted-foreground">Sent</p>
+              <p className="text-[22px] font-semibold text-foreground">{reactionsSent}</p>
+              <p className="text-[13px] text-muted-foreground">Sent</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{reactionsReceived}</p>
-              <p className="text-xs text-muted-foreground">Received</p>
+              <p className="text-[22px] font-semibold text-foreground">{reactionsReceived}</p>
+              <p className="text-[13px] text-muted-foreground">Received</p>
             </div>
             <div>
-              <p className="text-2xl">{mostUsedReaction?.emoji ?? '🔥'}</p>
-              <p className="text-xs text-muted-foreground">Most Used</p>
+              <p className="text-[22px]">{mostUsedReaction?.emoji ?? '🔥'}</p>
+              <p className="text-[13px] text-muted-foreground">Most Used</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">x{maxCombo}</p>
-              <p className="text-xs text-muted-foreground">Max Combo</p>
+              <p className="text-[22px] font-semibold text-foreground">x{maxCombo}</p>
+              <p className="text-[13px] text-muted-foreground">Max Combo</p>
             </div>
           </div>
         </motion.div>
 
-        {/* Profile badge */}
         <motion.div className="w-full" variants={item}>
           <ProfileBadge stats={playerStats} />
         </motion.div>
 
-        {/* Connection moment */}
         {showConnectionMoment && vibeScore > 75 && (
           <motion.div
-            className="w-full rounded-lg border border-primary/30 bg-primary/10 p-4 text-center"
-            initial={{ opacity: 0, y: 20 }}
+            className="panel w-full text-center"
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <p className="text-sm font-semibold text-primary">💞 Connection Moment</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Your vibes were so strong — keep the connection?
+            <p className="text-sm font-semibold text-primary">Connection moment</p>
+            <p className="mt-2 text-[13px] text-muted-foreground">
+              Your vibes were strong. Keep the connection?
             </p>
             <motion.button
               onClick={handleAddToVibeList}
               disabled={addedToVibeList}
-              className="mt-3 rounded-pill border border-primary/50 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+              className="primary-btn mt-4 w-full disabled:opacity-50"
               whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: 0.98 }}
             >
-              {addedToVibeList ? '✅ Added to Vibe List' : '💫 Add to Vibe List'}
+              {addedToVibeList ? 'Added to Vibe List' : 'Add to Vibe List'}
             </motion.button>
           </motion.div>
         )}
@@ -190,17 +177,17 @@ const ResultScreen = () => {
         <motion.div className="flex w-full flex-col gap-3" variants={item}>
           <motion.button
             onClick={() => navigate('/waiting', { state: { characterId: myChar.id } })}
-            className="w-full rounded-pill bg-primary py-3 font-semibold text-primary-foreground glow-border-purple"
+            className="primary-btn w-full"
             whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
+            whileTap={{ scale: 0.98 }}
           >
-            Vibe Again ✨
+            Vibe Again
           </motion.button>
           <motion.button
             onClick={() => navigate('/select')}
-            className="w-full rounded-pill border border-border py-3 font-semibold text-foreground transition-colors hover:bg-card"
+            className="secondary-btn w-full"
             whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
+            whileTap={{ scale: 0.98 }}
           >
             Change Character
           </motion.button>

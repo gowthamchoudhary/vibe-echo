@@ -16,20 +16,20 @@ const CharacterSelect = () => {
 
   return (
     <motion.div
-      className="flex min-h-screen flex-col items-center px-6 py-12"
-      initial={{ opacity: 0, y: 20 }}
+      className="flex min-h-screen flex-col items-center"
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      exit={{ opacity: 0, y: -8 }}
     >
-      <div className="w-full max-w-lg">
+      <div className="app-shell">
         <motion.div
-          className="mb-8 text-center"
-          initial={{ opacity: 0, y: 20 }}
+          className="mb-6 text-center"
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-3xl font-bold text-foreground">Choose your voice</h1>
-          <p className="mt-2 text-muted-foreground">
-            This is how you'll sound to your match
+          <h1 className="text-[28px] font-semibold text-foreground">Choose your voice</h1>
+          <p className="mt-2 text-base text-muted-foreground">
+            This is how you&apos;ll sound to your match
           </p>
         </motion.div>
 
@@ -37,7 +37,7 @@ const CharacterSelect = () => {
           {CHARACTERS.map((char, i) => (
             <motion.div
               key={char.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.08 }}
             >
@@ -53,19 +53,19 @@ const CharacterSelect = () => {
         <AnimatePresence>
           {selectedId && (
             <motion.div
-              className="fixed inset-x-0 bottom-0 p-6"
-              initial={{ y: 80, opacity: 0 }}
+              className="mt-6"
+              initial={{ y: 8, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              exit={{ y: 8, opacity: 0 }}
+              transition={{ duration: 0.2 }}
             >
               <motion.button
                 onClick={handleConfirm}
-                className="w-full rounded-pill bg-primary py-4 text-lg font-semibold text-primary-foreground glow-border-purple"
+                className="primary-btn w-full"
                 whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
+                whileTap={{ scale: 0.98 }}
               >
-                Let's Vibe ✨
+                Continue
               </motion.button>
             </motion.div>
           )}

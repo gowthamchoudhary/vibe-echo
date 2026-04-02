@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CharacterAvatar from '@/components/CharacterAvatar';
 import { CHARACTERS, FUN_FACTS } from '@/utils/sounds';
-import { generateUsername, getPlayerStats } from '@/utils/playerIdentity';
+import { getPlayerStats } from '@/utils/playerIdentity';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
 const WaitingRoom = () => {
@@ -40,7 +40,6 @@ const WaitingRoom = () => {
     onSessionEnd,
   });
 
-  // Connect to WebSocket on mount
   useEffect(() => {
     if (isOnline) {
       connect();
@@ -55,7 +54,6 @@ const WaitingRoom = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Track wait time
   useEffect(() => {
     const interval = setInterval(() => {
       setWaitTime((prev) => prev + 1);
@@ -63,7 +61,6 @@ const WaitingRoom = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Show AI option after 15 seconds (or immediately if offline)
   useEffect(() => {
     const threshold = isOnline ? 15 : 3;
     if (waitTime >= threshold && !showAIOption) {
@@ -89,52 +86,49 @@ const WaitingRoom = () => {
     ? 'Searching locally...'
     : status === 'connecting'
       ? 'Connecting to server...'
-      : status === 'waiting'
-        ? 'Finding your vibe partner...'
-        : 'Finding your vibe partner...';
+      : 'Finding your vibe partner...';
 
   return (
     <motion.div
-      className="flex min-h-screen flex-col items-center justify-center px-6"
-      initial={{ opacity: 0, y: 20 }}
+      className="flex min-h-screen flex-col items-center justify-center"
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
+      exit={{ opacity: 0 }}
     >
-      <div className="flex flex-col items-center gap-8">
+      <div className="app-shell flex flex-col items-center gap-6">
         <CharacterAvatar
           emoji={character.emoji}
           color={character.color}
           glow={character.glow}
-          size={140}
+          size={132}
           pulsing
         />
 
         <div className="text-center">
           <motion.p
-            className="text-xl font-semibold text-foreground"
-            animate={{ opacity: [1, 0.5, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
+            className="text-[22px] font-semibold text-foreground"
+            animate={{ opacity: [1, 0.85, 1] }}
+            transition={{ duration: 1.6, repeat: Infinity }}
           >
             {statusText}
           </motion.p>
-          <p className="mt-1 text-sm text-muted-foreground">{waitTime}s</p>
-          {isOnline && (
-            <p className="mt-1 text-xs text-accent">🟢 Connected to live server</p>
-          )}
-          {!isOnline && (
-            <p className="mt-1 text-xs text-muted-foreground">⚪ Offline mode</p>
+          <p className="mt-2 text-[13px] text-muted-foreground">{waitTime}s elapsed</p>
+          {isOnline ? (
+            <p className="mt-2 text-[13px] text-primary">Connected to live server</p>
+          ) : (
+            <p className="mt-2 text-[13px] text-muted-foreground">Offline mode</p>
           )}
         </div>
 
-        <div className="h-12">
+        <div className="panel flex h-[88px] w-full items-center justify-center">
           <AnimatePresence mode="wait">
             <motion.p
               key={factIndex}
-              className="max-w-xs text-center text-sm text-muted-foreground"
-              initial={{ opacity: 0, y: 10 }}
+              className="text-center text-[13px] text-muted-foreground"
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
             >
               {FUN_FACTS[factIndex]}
             </motion.p>
@@ -144,20 +138,20 @@ const WaitingRoom = () => {
         <AnimatePresence>
           {showAIOption && (
             <motion.div
-              className="flex flex-col items-center gap-3"
-              initial={{ opacity: 0, y: 20 }}
+              className="panel flex w-full flex-col items-center gap-3"
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <p className="text-sm text-muted-foreground">
-                {isOnline ? 'No match found yet...' : 'Worker not deployed — try AI!'}
+              <p className="text-[13px] text-muted-foreground">
+                {isOnline ? 'No match found yet.' : 'Worker not deployed. Try AI instead.'}
               </p>
               <motion.button
                 onClick={handlePlayWithAI}
-                className="rounded-pill bg-primary px-6 py-3 font-semibold text-primary-foreground glow-border-purple"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="primary-btn w-full"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                🤖 Play with AI instead
+                Play with AI instead
               </motion.button>
             </motion.div>
           )}
@@ -165,9 +159,9 @@ const WaitingRoom = () => {
 
         <motion.button
           onClick={() => { disconnect(); navigate('/'); }}
-          className="mt-4 rounded-pill border border-border px-6 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          className="secondary-btn w-full"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           Cancel
         </motion.button>

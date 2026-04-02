@@ -14,14 +14,14 @@ interface ParticleBurstProps {
   id: number;
 }
 
-const ParticleBurst = ({ active, color = '#9b59ff', id }: ParticleBurstProps) => {
+const ParticleBurst = ({ active, color = '#6366F1', id }: ParticleBurstProps) => {
   if (!active) return null;
 
-  const particles: Particle[] = Array.from({ length: 8 }, (_, i) => ({
+  const particles: Particle[] = Array.from({ length: 6 }, (_, i) => ({
     id: i,
-    angle: (i / 8) * 360,
-    distance: 40 + Math.random() * 30,
-    size: 3 + Math.random() * 4,
+    angle: (i / 6) * 360,
+    distance: 24 + Math.random() * 18,
+    size: 2 + Math.random() * 2,
     color,
   }));
 
@@ -40,11 +40,10 @@ const ParticleBurst = ({ active, color = '#9b59ff', id }: ParticleBurstProps) =>
                 width: p.size,
                 height: p.size,
                 backgroundColor: p.color,
-                boxShadow: `0 0 6px ${p.color}`,
               }}
               initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-              animate={{ x, y, opacity: 0, scale: 0.3 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
+              animate={{ x, y, opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
             />
           );
         })}

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,59 +6,42 @@
 
 @layer base {
   :root {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 100%;
+    --background: 240 15% 5%;
+    --foreground: 240 12% 96%;
 
-    --card: 0 0% 6.7%;
-    --card-foreground: 0 0% 100%;
+    --card: 240 17% 9%;
+    --card-foreground: 240 12% 96%;
 
-    --popover: 0 0% 6.7%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 240 17% 9%;
+    --popover-foreground: 240 12% 96%;
 
-    --primary: 268 100% 67%;
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 186 100% 50%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 240 17% 9%;
+    --secondary-foreground: 240 12% 96%;
 
-    --muted: 0 0% 13%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 240 14% 12%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 268 100% 67%;
+    --accent: 239 84% 67%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 13%;
-    --input: 0 0% 13%;
-    --ring: 268 100% 67%;
+    --border: 240 16% 14%;
+    --input: 240 16% 14%;
+    --ring: 239 84% 67%;
 
     --radius: 1rem;
 
-    /* Custom tokens */
-    --neon-purple: 268 100% 67%;
-    --neon-cyan: 186 100% 50%;
-    --surface: 0 0% 6.7%;
-    --surface-border: 0 0% 13%;
-
-    /* Glow effects */
-    --glow-purple: 0 0 30px hsl(268 100% 67% / 0.4);
-    --glow-cyan: 0 0 30px hsl(186 100% 50% / 0.4);
-
-    /* Character colors */
-    --char-robot: 186 100% 50%;
-    --char-knight: 51 100% 50%;
-    --char-villain: 0 100% 63%;
-    --char-witch: 268 100% 67%;
-
-    /* Reaction colors */
-    --react-hype: 27 100% 50%;
-    --react-confused: 186 100% 50%;
-    --react-sad: 218 100% 64%;
-    --react-angry: 350 100% 57%;
-    --react-laugh: 51 100% 50%;
-    --react-mysterious: 268 100% 67%;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
   }
 }
 
@@ -69,24 +52,64 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
 }
 
 @layer utilities {
-  .text-glow-purple {
-    text-shadow: 0 0 20px hsl(268 100% 67% / 0.5), 0 0 40px hsl(268 100% 67% / 0.3);
+  .app-shell {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: var(--space-5);
   }
 
-  .text-glow-cyan {
-    text-shadow: 0 0 20px hsl(186 100% 50% / 0.5), 0 0 40px hsl(186 100% 50% / 0.3);
+  .panel {
+    background: #12121a;
+    border: 1px solid #1e1e2a;
+    border-radius: 16px;
+    padding: 16px;
   }
 
-  .glow-border-purple {
-    box-shadow: 0 0 20px hsl(268 100% 67% / 0.3), inset 0 0 20px hsl(268 100% 67% / 0.1);
+  .primary-btn {
+    background: #6366f1;
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-weight: 600;
+    transition: all 0.2s ease;
   }
 
-  .glow-border-cyan {
-    box-shadow: 0 0 20px hsl(186 100% 50% / 0.3), inset 0 0 20px hsl(186 100% 50% / 0.1);
+  .primary-btn:hover {
+    background: #5855eb;
+    transform: scale(1.02);
+  }
+
+  .secondary-btn {
+    background: #12121a;
+    color: #f5f5f7;
+    border: 1px solid #1e1e2a;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .secondary-btn:hover {
+    border-color: rgba(99, 102, 241, 0.45);
+    transform: scale(1.02);
+  }
+
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    border: 1px solid #1e1e2a;
+    border-radius: 999px;
+    background: #12121a;
+    padding: 8px 12px;
+    color: #a1a1aa;
+    font-size: 13px;
+    line-height: 1;
   }
 }

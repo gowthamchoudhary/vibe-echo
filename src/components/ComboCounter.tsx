@@ -12,21 +12,17 @@ const ComboCounter = ({ combo, multiplier }: ComboCounterProps) => {
     <AnimatePresence>
       <motion.div
         key={combo}
-        className="flex items-center gap-2"
-        initial={{ scale: 1.5, opacity: 0 }}
+        className="status-chip"
+        initial={{ scale: 0.98, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+        transition={{ duration: 0.2 }}
       >
-        <span className="text-sm font-bold text-foreground">
-          🔥 {combo} combo
+        <span className="text-sm font-semibold text-foreground">
+          {combo} combo
         </span>
-        <motion.span
-          className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground"
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 0.3 }}
-        >
+        <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
           x{multiplier}
-        </motion.span>
+        </span>
       </motion.div>
     </AnimatePresence>
   );

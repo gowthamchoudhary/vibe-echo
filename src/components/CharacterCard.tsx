@@ -11,32 +11,26 @@ const CharacterCard = ({ character, selected, onSelect }: CharacterCardProps) =>
   return (
     <motion.button
       onClick={() => onSelect(character.id)}
-      className="relative flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors"
-      style={{
-        border: selected ? `2px solid ${character.color}` : '2px solid hsl(var(--border))',
-        boxShadow: selected ? character.glow : 'none',
-      }}
-      whileHover={{ scale: 1.05, y: -4 }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+      className={`relative flex min-h-[172px] flex-col items-center justify-center gap-3 rounded-2xl border bg-card p-4 text-center transition-all duration-200 ${
+        selected ? 'border-primary' : 'border-border'
+      }`}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
     >
       {selected && (
         <motion.div
-          className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full text-xs"
-          style={{ backgroundColor: character.color }}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 500 }}
+          className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.2 }}
         >
           ✓
         </motion.div>
       )}
-      <span className="text-6xl">{character.emoji}</span>
-      <span className="text-lg font-semibold text-foreground">{character.name}</span>
-      <span
-        className="rounded-pill px-3 py-1 text-xs font-medium"
-        style={{ backgroundColor: `${character.color}22`, color: character.color }}
-      >
+      <span className="text-5xl">{character.emoji}</span>
+      <span className="text-base font-semibold text-foreground">{character.name}</span>
+      <span className={`rounded-full px-3 py-1 text-[13px] ${selected ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
         {character.personality.split(',')[0]}
       </span>
     </motion.button>
